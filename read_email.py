@@ -1,41 +1,47 @@
 import imaplib
 import email
-import traceback
 from config import SMTP_SERVER, FROM_EMAIL, FROM_PWD
 
 
-Emails = namedtuple('Emails', "from subject")
+class Email(object):
 
-def read_email_from_gmail():
-    email_dict = {}
-    try:
-        mail = imaplib.IMAP4_SSL(SMTP_SERVER)
-        mail.login(FROM_EMAIL, FROM_PWD)
-        mail.select('inbox')
+    def __init__(self, email_message):
+        self.__email = email_message
 
-        data = mail.search(None, 'ALL')
-        mail_ids = data[1]
+    @property
+    def sender(self):
+        return self.__email['From']
 
-        id_list = mail_ids[0].split()[-20:] #last 20 emails
-        first_email_id = int(id_list[0])
-        latest_email_id = int(id_list[-1])
+    @property
+    def date(self):
+        return self.__email['Date']
+
+    @property
+    def subject(self):
+        return self.__email['Subject']
+
+
+class EmailParserImapClient(imaplib.IMAP4_SSL):
+
+    def get_mail_ids(self):
+        return self.search(None, 'ALL')[1][0].split()
+
+    def iter_mails(self, mail_ids):
+
+        first_email_id = int(mail_ids[0])
+        latest_email_id = int(mail_ids[-1])
 
         for i in range(latest_email_id, first_email_id, -1):
-            data = mail.fetch(str(i), '(RFC822)')
-            for response_part in data:
-                arr = response_part[0]
-                if isinstance(arr, tuple):
-                    msg = email.message_from_string(str(arr[1], 'utf-8'))
-                    email_subject = msg['subject']
-                    email_from = msg['from']
-                    email_dict[email_from] = email_subject
-
-        print(email_dict)
-        return email_dict
-
-    except Exception as e:
-        traceback.print_exc()
-        print(str(e))
+            mail_content = self.fetch(str(i), '(RFC822)')[1][0][1]
+            msg = email.message_from_string(str(mail_content, 'utf-8'))
+            yield Email(msg)
 
 
-read_email_from_gmail()
+def read_email_from_gmail(box='inbox', max_count=20):
+    imap_client = EmailParserImapClient(SMTP_SERVER)
+    imap_client.login(FROM_EMAIL, FROM_PWD)
+    imap_client.select(box)
+
+    all_mails_ids = imap_client.get_mail_ids()[-max_count:]
+
+    return list(imap_client.iter_mails(all_mails_ids))
