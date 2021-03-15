@@ -4,11 +4,11 @@ import requests
 import webbrowser
 import weather
 import hdd
+import read_email
 import steam
 import reddit
 import loading_icon
 import functools
-
 
 
 class WeatherWidget(QtWidgets.QWidget):
@@ -181,6 +181,7 @@ class DashboardUi(QtWidgets.QWidget):
         self.weather_title_lbl = QtWidgets.QLabel('Weather ' + requests.get('http://ipinfo.io/city').text)
         self.weather_widget = WeatherWidget()
         self.hdd_title_lbl = QtWidgets.QLabel('Hard Drive Capacity')
+        self.email_lbl = QtWidgets.QLabel('Last Email')
         self.reddit_news_lbl = QtWidgets.QLabel('Reddit France')
         self.reddit_widget = RedditFrNewsWidget()
         self.steam_news_title_lbl = QtWidgets.QLabel('Steam News')
@@ -193,6 +194,7 @@ class DashboardUi(QtWidgets.QWidget):
         self.title_layout = QtWidgets.QHBoxLayout()
         self.weather_layout = QtWidgets.QVBoxLayout()
         self.hdd_layout = QtWidgets.QVBoxLayout()
+        self.email_layout = QtWidgets.QVBoxLayout()
         self.reddit_layout = QtWidgets.QVBoxLayout()
         self.steam_news_layout = QtWidgets.QVBoxLayout()
         self.steam_friends_layout = QtWidgets.QVBoxLayout()
@@ -219,6 +221,11 @@ class DashboardUi(QtWidgets.QWidget):
         self.reddit_news_lbl.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.reddit_news_lbl.setFixedHeight(40)
 
+        self.email_lbl.setStyleSheet(style_title)
+        self.email_lbl.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        self.email_lbl.setFixedHeight(40)
+
+
         self.steam_news_title_lbl.setStyleSheet(style_title)
         self.steam_news_title_lbl.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.steam_news_title_lbl.setFixedHeight(40)
@@ -232,18 +239,21 @@ class DashboardUi(QtWidgets.QWidget):
         [self.weather_layout.addWidget(w) for w in (self.weather_title_lbl, self.weather_widget)]
         [self.reddit_layout.addWidget(w) for w in (self.reddit_news_lbl, self.reddit_widget)]
         self.hdd_layout.addWidget(self.hdd_title_lbl)
+        self.email_layout.addWidget(self.email_lbl)
         [self.steam_news_layout.addWidget(w) for w in (self.steam_news_title_lbl, self.steam_news_widget)]
         [self.steam_friends_layout.addWidget(w) for w in (self.steam_friends_title_lbl, self.steam_friends_widget)]
 
         self.main_layout.addLayout(self.title_layout, 0, 0, 1, 3)
         self.main_layout.addLayout(self.weather_layout, 1, 0, 1, 3)
         self.main_layout.addLayout(self.hdd_layout, 2, 0, 1, 1)
+        self.main_layout.addLayout(self.email_layout, 2, 1, 1, 1)
         self.main_layout.addLayout(self.reddit_layout, 3, 0, 1, 1)
         self.main_layout.addLayout(self.steam_news_layout, 2, 2, 1, 1)
         self.main_layout.addLayout(self.steam_friends_layout, 3, 2, 1, 1)
 
     def __setup_connections(self):
         self.set_hdd()
+        self.set_email()
 
     def set_hdd(self):
         hdd_data = hdd.get_hdd_data()
@@ -257,6 +267,17 @@ class DashboardUi(QtWidgets.QWidget):
             giga_hdd_lbl = QtWidgets.QLabel(str(hdd_data[1][h][1]) + ' / ' + str(hdd_data[1][h][0]))
             [layout.addWidget(w) for w in (name_hdd, progress_bar, giga_hdd_lbl)]
             self.hdd_layout.addLayout(layout)
+
+    def set_email(self):
+        email = read_email.read_email()
+        for e in email:
+            layout = QtWidgets.QHBoxLayout()
+            date_email = QtWidgets.QLabel(e.date)
+            sender_email = QtWidgets.QLabel(e.sender)
+            subject_email = QtWidgets.QLabel(e.subject)
+            [layout.addWidget(w) for w in(date_email, sender_email, subject_email)]
+            self.email_layout.addLayout(layout)
+
 
 
 style_top_title = '''QLabel { background-color: #1b2838; color: white; font: Verdana;

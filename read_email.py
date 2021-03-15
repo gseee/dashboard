@@ -37,7 +37,7 @@ class EmailParserImapClient(imaplib.IMAP4_SSL):
             yield Email(msg)
 
 
-def read_email_from_gmail(box='inbox', max_count=20):
+def read_email(box='inbox', max_count=20):
     imap_client = EmailParserImapClient(SMTP_SERVER)
     imap_client.login(FROM_EMAIL, FROM_PWD)
     imap_client.select(box)
